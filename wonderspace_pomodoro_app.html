@@ -1,0 +1,462 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  #app {
+    min-height: 520px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #app::before {
+    content: '';
+    position: absolute;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(100,149,237,0.15) 0%, transparent 70%);
+    top: -80px; right: -60px;
+    pointer-events: none;
+  }
+
+  .scene-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    background: rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 4px;
+  }
+
+  .scene-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 5px 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .scene-btn.active {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 180px; height: 180px;
+    margin-bottom: 1.5rem;
+  }
+
+  .timer-ring svg { transform: rotate(-90deg); }
+
+  .timer-ring .track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
+  .timer-ring .progress { fill: none; stroke: #6495ED; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+
+  .timer-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .timer-display {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px;
+    color: #fff;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .timer-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+
+  .mode-tab {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.45);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .mode-tab.active {
+    border-color: #6495ED;
+    color: #6495ED;
+    background: rgba(100,149,237,0.1);
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 1.75rem;
+  }
+
+  .ctrl-btn {
+    background: rgba(255,255,255,0.08);
+    border: none;
+    color: #fff;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+
+  .ctrl-btn:hover { background: rgba(255,255,255,0.15); }
+
+  .play-btn {
+    background: #6495ED;
+    border: none;
+    color: #fff;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .play-btn:hover { background: #7aabf0; }
+  .play-btn:active { transform: scale(0.96); }
+
+  .sounds-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .sound-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5);
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 5px 12px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .sound-chip.active {
+    background: rgba(100,149,237,0.18);
+    border-color: #6495ED;
+    color: #9bbdf5;
+  }
+
+  .tasks-panel {
+    width: 100%;
+    max-width: 320px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+
+  .tasks-header {
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .task-input-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .task-input {
+    flex: 1;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+  }
+
+  .task-input::placeholder { color: rgba(255,255,255,0.25); }
+
+  .add-btn {
+    background: #6495ED;
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .task-list { list-style: none; }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .task-item:last-child { border-bottom: none; }
+
+  .task-check {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.25);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .task-check.done {
+    background: #6495ED;
+    border-color: #6495ED;
+  }
+
+  .task-text.done { text-decoration: line-through; color: rgba(255,255,255,0.3); }
+
+  .sessions-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .dot.filled { background: #6495ED; }
+</style>
+
+<div id="app">
+  <div class="scene-bar">
+    <button class="scene-btn active" onclick="setScene('night')">Night City</button>
+    <button class="scene-btn" onclick="setScene('forest')">Forest</button>
+    <button class="scene-btn" onclick="setScene('cafe')">Café</button>
+    <button class="scene-btn" onclick="setScene('space')">Space</button>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('focus', 25*60)">Focus</button>
+    <button class="mode-tab" onclick="setMode('short', 5*60)">Short break</button>
+    <button class="mode-tab" onclick="setMode('long', 15*60)">Long break</button>
+  </div>
+
+  <div class="timer-ring">
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <circle class="track" cx="90" cy="90" r="80"/>
+      <circle class="progress" id="ring" cx="90" cy="90" r="80"
+        stroke-dasharray="502.65"
+        stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-center">
+      <div class="timer-display" id="display">25:00</div>
+      <div class="timer-label" id="mode-label">FOCUS</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetTimer()" title="Reset">↺</button>
+    <button class="play-btn" id="playBtn" onclick="toggleTimer()">▶</button>
+    <button class="ctrl-btn" onclick="skipSession()" title="Skip">⏭</button>
+  </div>
+
+  <div class="sounds-row">
+    <button class="sound-chip" onclick="toggleSound(this, 'rain')">Rain</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'lofi')">Lo-fi</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'cafe')">Café</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'fire')">Fireplace</button>
+  </div>
+
+  <div class="sessions-row" id="sessionsRow">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+
+  <div style="height: 12px;"></div>
+
+  <div class="tasks-panel">
+    <div class="tasks-header">Today's tasks</div>
+    <div class="task-input-row">
+      <input class="task-input" id="taskInput" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()"/>
+      <button class="add-btn" onclick="addTask()">+</button>
+    </div>
+    <ul class="task-list" id="taskList">
+      <li class="task-item">
+        <div class="task-check" onclick="toggleTask(this)"></div>
+        <span class="task-text">Finish Python assignment</span>
+      </li>
+      <li class="task-item">
+        <div class="task-check done" onclick="toggleTask(this)">✓</div>
+        <span class="task-text done">Review BeautifulSoup notes</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  const CIRCUMFERENCE = 502.65;
+  const scenes = {
+    night: { bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', accent: '#6495ED' },
+    forest: { bg: 'linear-gradient(135deg, #1a2e1a 0%, #162e16 50%, #0f3020 100%)', accent: '#5DBB8A' },
+    cafe: { bg: 'linear-gradient(135deg, #2e1a0f 0%, #3d2010 50%, #4a2c15 100%)', accent: '#E8A87C' },
+    space: { bg: 'linear-gradient(135deg, #0a0a1a 0%, #0d0d2b 50%, #050510 100%)', accent: '#C77DFF' }
+  };
+
+  let totalTime = 25 * 60;
+  let timeLeft = totalTime;
+  let running = false;
+  let interval = null;
+  let sessions = 0;
+
+  function fmt(s) {
+    return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+  }
+
+  function updateRing() {
+    const pct = timeLeft / totalTime;
+    document.getElementById('ring').style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
+  }
+
+  function updateDisplay() {
+    document.getElementById('display').textContent = fmt(timeLeft);
+    updateRing();
+  }
+
+  function toggleTimer() {
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      document.getElementById('playBtn').textContent = '▶';
+    } else {
+      running = true;
+      document.getElementById('playBtn').textContent = '⏸';
+      interval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateDisplay();
+        } else {
+          clearInterval(interval);
+          running = false;
+          document.getElementById('playBtn').textContent = '▶';
+          sessions = Math.min(sessions + 1, 4);
+          updateDots();
+        }
+      }, 1000);
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    timeLeft = totalTime;
+    document.getElementById('playBtn').textContent = '▶';
+    updateDisplay();
+  }
+
+  function skipSession() {
+    clearInterval(interval);
+    running = false;
+    timeLeft = 0;
+    document.getElementById('playBtn').textContent = '▶';
+    updateDisplay();
+    sessions = Math.min(sessions + 1, 4);
+    updateDots();
+  }
+
+  function setMode(name, secs) {
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    totalTime = secs;
+    timeLeft = secs;
+    clearInterval(interval);
+    running = false;
+    document.getElementById('playBtn').textContent = '▶';
+    document.getElementById('mode-label').textContent = name.toUpperCase();
+    updateDisplay();
+  }
+
+  function setScene(name) {
+    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    const s = scenes[name];
+    document.getElementById('app').style.background = s.bg;
+    document.getElementById('ring').style.stroke = s.accent;
+    document.querySelectorAll('.play-btn, .add-btn').forEach(el => el.style.background = s.accent);
+    document.querySelectorAll('.dot.filled').forEach(el => el.style.background = s.accent);
+    document.querySelectorAll('.sound-chip.active').forEach(el => {
+      el.style.borderColor = s.accent;
+      el.style.color = s.accent;
+    });
+  }
+
+  function updateDots() {
+    const dots = document.querySelectorAll('#sessionsRow .dot');
+    dots.forEach((d, i) => {
+      d.classList.toggle('filled', i < sessions);
+    });
+  }
+
+  function toggleSound(el, name) {
+    el.classList.toggle('active');
+  }
+
+  function addTask() {
+    const inp = document.getElementById('taskInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `<div class="task-check" onclick="toggleTask(this)"></div><span class="task-text">${text}</span>`;
+    document.getElementById('taskList').appendChild(li);
+    inp.value = '';
+  }
+
+  function toggleTask(el) {
+    el.classList.toggle('done');
+    if (el.classList.contains('done')) el.textContent = '✓';
+    else el.textContent = '';
+    el.nextElementSibling.classList.toggle('done');
+  }
+
+  updateDisplay();
+</script>
