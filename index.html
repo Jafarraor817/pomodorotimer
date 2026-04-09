@@ -437,8 +437,27 @@
   }
 
   function toggleSound(el, name) {
-    el.classList.toggle('active');
+  el.classList.toggle('active');
+}
+
+  const sounds = {
+  
+  lofi: new Audio('lofi.mp3'),
+  
+}
+
+Object.values(sounds).forEach(s => s.loop = true)
+
+function toggleSound(el, name) {
+  el.classList.toggle('active')
+  if (el.classList.contains('active')) {
+    sounds[name].play()
+  } else {
+    sounds[name].pause()
+    sounds[name].currentTime = 0
   }
+}
+  
 
   function addTask() {
     const inp = document.getElementById('taskInput');
