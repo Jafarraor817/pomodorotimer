@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WonderSpace — Focus Timer</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0d0d1a;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 420px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      background: #1a1a2e;
+      transition: background 1s;
+    }
+
+    #canvas-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #app > * { position: relative; z-index: 1; }
+
+    /* Scene bar */
+    .scene-bar {
+      display: flex; gap: 8px; margin-bottom: 1.75rem;
+      background: rgba(255,255,255,0.06); border-radius: 20px; padding: 4px;
+    }
+    .scene-btn {
+      background: none; border: none; color: rgba(255,255,255,0.5);
+      font-family: 'DM Sans', sans-serif; font-size: 12px;
+      padding: 5px 14px; border-radius: 16px; cursor: pointer; transition: all 0.2s;
+    }
+    .scene-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
+    .scene-btn:hover { color: rgba(255,255,255,0.8); }
+
+    /* Mode tabs */
+    .mode-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+    .mode-tab {
+      background: none; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.45);
+      font-family: 'DM Sans', sans-serif; font-size: 11px; padding: 4px 12px;
+      border-radius: 12px; cursor: pointer; transition: all 0.2s;
+    }
+    .mode-tab.active { border-color: var(--accent); color: var(--accent); background: rgba(100,149,237,0.1); }
+
+    /* Timer ring */
+    .timer-ring { position: relative; width: 190px; height: 190px; margin-bottom: 1.5rem; }
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring .track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 7; }
+    .timer-ring .progress { fill: none; stroke: #6495ED; stroke-width: 7; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+    .timer-center {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .timer-display { font-family: 'DM Serif Display', serif; font-size: 46px; color: #fff; letter-spacing: -1px; line-height: 1; }
+    .timer-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 2.5px; text-transform: uppercase; margin-top: 5px; }
+
+    /* Controls */
+    .controls { display: flex; gap: 14px; align-items: center; margin-bottom: 1.75rem; }
+    .ctrl-btn {
+      background: rgba(255,255,255,0.08); border: none; color: #fff;
+      width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+      font-size: 15px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.16); }
+    .play-btn {
+      background: #6495ED; border: none; color: #fff; width: 56px; height: 56px;
+      border-radius: 50%; cursor: pointer; font-size: 20px;
+      display: flex; align-items: center; justify-content: center; transition: filter 0.2s, transform 0.1s;
+    }
+    .play-btn:hover { filter: brightness(1.15); }
+    .play-btn:active { transform: scale(0.95); }
+
+    /* Sounds */
+    .sounds-row { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; justify-content: center; }
+    .sound-chip {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5); font-size: 11px; font-family: 'DM Sans', sans-serif;
+      padding: 5px 13px; border-radius: 14px; cursor: pointer; transition: all 0.2s;
+    }
+    .sound-chip.active { background: rgba(100,149,237,0.18); border-color: #6495ED; color: #9bbdf5; }
+    .sound-chip:hover { color: rgba(255,255,255,0.75); }
+
+    /* Session dots */
+    .sessions-row { display: flex; gap: 5px; margin-bottom: 1.5rem; justify-content: center; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: background 0.3s; }
+    .dot.filled { background: #6495ED; }
+
+    /* Tasks */
+    .tasks-panel {
+      width: 100%; max-width: 340px;
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 14px 16px;
+    }
+    .tasks-header { font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .task-input-row { display: flex; gap: 7px; margin-bottom: 10px; }
+    .task-input {
+      flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; color: #fff; font-family: 'DM Sans', sans-serif;
+      font-size: 13px; padding: 7px 10px; outline: none; transition: border-color 0.2s;
+    }
+    .task-input:focus { border-color: rgba(255,255,255,0.25); }
+    .task-input::placeholder { color: rgba(255,255,255,0.22); }
+    .add-btn {
+      background: #6495ED; border: none; color: #fff; border-radius: 8px;
+      padding: 7px 14px; font-size: 18px; cursor: pointer; line-height: 1; transition: filter 0.2s;
+    }
+    .add-btn:hover { filter: brightness(1.12); }
+    .task-list { list-style: none; }
+    .task-item {
+      display: flex; align-items: center; gap: 9px; padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; color: rgba(255,255,255,0.72);
+    }
+    .task-item:last-child { border-bottom: none; }
+    .task-check {
+      width: 15px; height: 15px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25);
+      cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 9px; transition: all 0.2s;
+    }
+    .task-check.done { background: #6495ED; border-color: #6495ED; color: #fff; }
+    .task-text.done { text-decoration: line-through; color: rgba(255,255,255,0.28); }
+
+    :root { --accent: #6495ED; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <canvas id="canvas-bg"></canvas>
+
+  <div class="scene-bar">
+    <button class="scene-btn active" onclick="setScene('night',this)">Night City</button>
+    <button class="scene-btn" onclick="setScene('forest',this)">Forest</button>
+    <button class="scene-btn" onclick="setScene('cafe',this)">Café</button>
+    <button class="scene-btn" onclick="setScene('space',this)">Space</button>
+  </div>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" onclick="setMode('FOCUS', 25*60, this)">Focus</button>
+    <button class="mode-tab" onclick="setMode('SHORT BREAK', 5*60, this)">Short break</button>
+    <button class="mode-tab" onclick="setMode('LONG BREAK', 15*60, this)">Long break</button>
+  </div>
+
+  <div class="timer-ring">
+    <svg width="190" height="190" viewBox="0 0 190 190">
+      <circle class="track" cx="95" cy="95" r="85"/>
+      <circle class="progress" id="ring" cx="95" cy="95" r="85"
+        stroke-dasharray="534.07" stroke-dashoffset="0"/>
+    </svg>
+    <div class="timer-center">
+      <div class="timer-display" id="display">25:00</div>
+      <div class="timer-label" id="mode-label">FOCUS</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="resetTimer()" title="Reset">↺</button>
+    <button class="play-btn" id="playBtn" onclick="toggleTimer()">▶</button>
+    <button class="ctrl-btn" onclick="skipSession()" title="Skip">⏭</button>
+  </div>
+
+  <div class="sounds-row">
+    <button class="sound-chip" onclick="toggleSound(this, 'rain')">🌧 Rain</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'lofi')">🎵 Lo-fi</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'cafe')">☕ Café</button>
+    <button class="sound-chip" onclick="toggleSound(this, 'fire')">🔥 Fireplace</button>
+  </div>
+
+  <div class="sessions-row" id="sessionsRow">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+
+  <div class="tasks-panel">
+    <div class="tasks-header">Today's tasks</div>
+    <div class="task-input-row">
+      <input class="task-input" id="taskInput" placeholder="Add a task..."
+             onkeydown="if(event.key==='Enter')addTask()"/>
+      <button class="add-btn" onclick="addTask()">+</button>
+    </div>
+    <ul class="task-list" id="taskList">
+      <li class="task-item">
+        <div class="task-check" onclick="toggleTask(this)"></div>
+        <span class="task-text">Finish Python assignment</span>
+      </li>
+      <li class="task-item">
+        <div class="task-check done" onclick="toggleTask(this)">✓</div>
+        <span class="task-text done">Review BeautifulSoup notes</span>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<script>
+  // ── Audio ──────────────────────────────────────────────
+  const sounds = {
+    rain: new Audio('rain.mp3'),
+    lofi: new Audio('lofi.mp3'),
+    cafe: new Audio('cafe.mp3'),
+    fire: new Audio('fire.mp3')
+  };
+  Object.values(sounds).forEach(s => { s.loop = true; s.volume = 0.5; });
+
+  function toggleSound(el, name) {
+    el.classList.toggle('active');
+    if (el.classList.contains('active')) {
+      sounds[name].play().catch(() => {});
+    } else {
+      sounds[name].pause();
+      sounds[name].currentTime = 0;
+    }
+  }
+
+  // ── Timer ──────────────────────────────────────────────
+  const CIRCUMFERENCE = 534.07;
+  let totalTime = 25 * 60;
+  let timeLeft = totalTime;
+  let running = false;
+  let interval = null;
+  let sessions = 0;
+
+  function fmt(s) {
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function updateRing() {
+    document.getElementById('ring').style.strokeDashoffset = CIRCUMFERENCE * (1 - timeLeft / totalTime);
+  }
+
+  function updateDisplay() {
+    document.getElementById('display').textContent = fmt(timeLeft);
+    updateRing();
+  }
+
+  function toggleTimer() {
+    if (running) {
+      clearInterval(interval);
+      running = false;
+      document.getElementById('playBtn').textContent = '▶';
+    } else {
+      running = true;
+      document.getElementById('playBtn').textContent = '⏸';
+      interval = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateDisplay();
+        } else {
+          clearInterval(interval);
+          running = false;
+          document.getElementById('playBtn').textContent = '▶';
+          sessions = Math.min(sessions + 1, 4);
+          updateDots();
+        }
+      }, 1000);
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(interval);
+    running = false;
+    timeLeft = totalTime;
+    document.getElementById('playBtn').textContent = '▶';
+    updateDisplay();
+  }
+
+  function skipSession() {
+    clearInterval(interval);
+    running = false;
+    timeLeft = 0;
+    document.getElementById('playBtn').textContent = '▶';
+    updateDisplay();
+    sessions = Math.min(sessions + 1, 4);
+    updateDots();
+  }
+
+  function setMode(label, secs, btn) {
+    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    totalTime = secs;
+    timeLeft = secs;
+    clearInterval(interval);
+    running = false;
+    document.getElementById('playBtn').textContent = '▶';
+    document.getElementById('mode-label').textContent = label;
+    updateDisplay();
+  }
+
+  function updateDots() {
+    document.querySelectorAll('#sessionsRow .dot').forEach((d, i) => {
+      d.classList.toggle('filled', i < sessions);
+    });
+  }
+
+  // ── Animated backgrounds ───────────────────────────────
+  const sceneConfig = {
+    night:  { bg: '#1a1a2e', accent: '#6495ED' },
+    forest: { bg: '#1a2e1a', accent: '#5DBB8A' },
+    cafe:   { bg: '#2e1a0f', accent: '#E8A87C' },
+    space:  { bg: '#05050f', accent: '#C77DFF' }
+  };
+
+  const canvas = document.getElementById('canvas-bg');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let currentScene = 'night';
+  let animFrame;
+
+  function resizeCanvas() {
+    canvas.width = document.getElementById('app').offsetWidth;
+    canvas.height = document.getElementById('app').offsetHeight;
+  }
+
+  function initParticles(scene) {
+    particles = [];
+    const w = canvas.width, h = canvas.height;
+    if (scene === 'night') {
+      for (let i = 0; i < 90; i++) {
+        particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.5+0.3, alpha: Math.random(), speed: Math.random()*0.005+0.002 });
+      }
+    } else if (scene === 'forest') {
+      for (let i = 0; i < 35; i++) {
+        particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*3+2, alpha: 0, vx: (Math.random()-0.5)*0.4, vy: -Math.random()*0.5-0.2, life: Math.random()*150, maxLife: Math.random()*200+100 });
+      }
+    } else if (scene === 'cafe') {
+      for (let i = 0; i < 14; i++) {
+        particles.push({ x: w*0.3+Math.random()*w*0.4, y: h*0.65+Math.random()*h*0.25, vy: -Math.random()*0.6-0.3, vx: (Math.random()-0.5)*0.3, alpha: 0, r: Math.random()*9+4, life: 0, maxLife: Math.random()*150+80 });
+      }
+    } else if (scene === 'space') {
+      for (let i = 0; i < 70; i++) {
+        particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.2+0.2, alpha: Math.random()*0.7+0.1, speed: Math.random()*0.003+0.001, hue: Math.random()*60+260 });
+      }
+    }
+  }
+
+  function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scene = currentScene;
+
+    if (scene === 'night') {
+      particles.forEach(p => {
+        p.alpha += p.speed * (Math.random() > 0.5 ? 1 : -1);
+        p.alpha = Math.max(0.1, Math.min(1, p.alpha));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+        ctx.fill();
+      });
+      const grad = ctx.createLinearGradient(0, canvas.height*0.7, 0, canvas.height);
+      grad.addColorStop(0, 'transparent');
+      grad.addColorStop(1, 'rgba(100,149,237,0.12)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, canvas.height*0.7, canvas.width, canvas.height*0.3);
+    }
+
+    else if (scene === 'forest') {
+      particles.forEach(p => {
+        p.life++;
+        p.x += p.vx; p.y += p.vy;
+        if (p.life < p.maxLife*0.3) p.alpha = (p.life/(p.maxLife*0.3))*0.8;
+        else if (p.life > p.maxLife*0.7) p.alpha = (1-(p.life-p.maxLife*0.7)/(p.maxLife*0.3))*0.8;
+        else p.alpha = 0.8;
+        if (p.life > p.maxLife) {
+          p.x = Math.random()*canvas.width;
+          p.y = canvas.height*0.8+Math.random()*canvas.height*0.2;
+          p.life = 0;
+          p.vy = -Math.random()*0.5-0.2;
+          p.vx = (Math.random()-0.5)*0.4;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(93,187,138,${p.alpha})`;
+        ctx.fill();
+      });
+      const grad = ctx.createLinearGradient(0, canvas.height*0.75, 0, canvas.height);
+      grad.addColorStop(0, 'transparent');
+      grad.addColorStop(1, 'rgba(30,80,40,0.3)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, canvas.height*0.75, canvas.width, canvas.height*0.25);
+    }
+
+    else if (scene === 'cafe') {
+      particles.forEach(p => {
+        p.life++;
+        p.x += p.vx + Math.sin(p.life*0.05)*0.3;
+        p.y += p.vy;
+        if (p.life < p.maxLife*0.2) p.alpha = (p.life/(p.maxLife*0.2))*0.25;
+        else if (p.life > p.maxLife*0.6) p.alpha = (1-(p.life-p.maxLife*0.6)/(p.maxLife*0.4))*0.25;
+        else p.alpha = 0.25;
+        if (p.life > p.maxLife) {
+          p.x = canvas.width*0.3+Math.random()*canvas.width*0.4;
+          p.y = canvas.height*0.65+Math.random()*canvas.height*0.25;
+          p.life = 0;
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(232,168,124,${p.alpha})`;
+        ctx.fill();
+      });
+    }
+
+    else if (scene === 'space') {
+      particles.forEach(p => {
+        p.alpha += p.speed * (Math.random() > 0.5 ? 1 : -1);
+        p.alpha = Math.max(0.05, Math.min(0.9, p.alpha));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle = `hsla(${p.hue},80%,80%,${p.alpha})`;
+        ctx.fill();
+      });
+      [[0.2,0.3,'rgba(199,125,255,0.04)'],[0.7,0.6,'rgba(100,149,237,0.05)'],[0.5,0.8,'rgba(199,125,255,0.03)']].forEach(([x,y,c]) => {
+        const g = ctx.createRadialGradient(x*canvas.width, y*canvas.height, 0, x*canvas.width, y*canvas.height, 120);
+        g.addColorStop(0, c); g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      });
+    }
+
+    animFrame = requestAnimationFrame(drawParticles);
+  }
+
+  function setScene(name, btn) {
+    currentScene = name;
+    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cfg = sceneConfig[name];
+    document.getElementById('app').style.background = cfg.bg;
+    document.getElementById('ring').style.stroke = cfg.accent;
+    document.querySelector('.play-btn').style.background = cfg.accent;
+    document.querySelector('.add-btn').style.background = cfg.accent;
+    document.querySelectorAll('.dot.filled').forEach(d => d.style.background = cfg.accent);
+    cancelAnimationFrame(animFrame);
+    resizeCanvas();
+    initParticles(name);
+    drawParticles();
+  }
+
+  // ── Tasks ──────────────────────────────────────────────
+  function addTask() {
+    const inp = document.getElementById('taskInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.innerHTML = `<div class="task-check" onclick="toggleTask(this)"></div><span class="task-text">${text}</span>`;
+    document.getElementById('taskList').appendChild(li);
+    inp.value = '';
+  }
+
+  function toggleTask(el) {
+    el.classList.toggle('done');
+    el.textContent = el.classList.contains('done') ? '✓' : '';
+    el.nextElementSibling.classList.toggle('done');
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  resizeCanvas();
+  initParticles('night');
+  drawParticles();
+  updateDisplay();
+  window.addEventListener('resize', () => { resizeCanvas(); initParticles(currentScene); });
+</script>
+</body>
+</html>
