@@ -1,12 +1,10 @@
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   #app {
     min-height: 520px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     border-radius: 16px;
     display: flex;
     flex-direction: column;
@@ -15,258 +13,99 @@
     font-family: 'DM Sans', sans-serif;
     position: relative;
     overflow: hidden;
+    background: #1a1a2e;
+    transition: background 1s;
   }
 
-  #app::before {
-    content: '';
-    position: absolute;
-    width: 300px; height: 300px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(100,149,237,0.15) 0%, transparent 70%);
-    top: -80px; right: -60px;
-    pointer-events: none;
-  }
-
-  .scene-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 1.5rem;
-    background: rgba(255,255,255,0.06);
-    border-radius: 20px;
-    padding: 4px;
-  }
-
-  .scene-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.5);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 5px 14px;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .scene-btn.active {
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-  }
-
-  .timer-ring {
-    position: relative;
-    width: 180px; height: 180px;
-    margin-bottom: 1.5rem;
-  }
-
-  .timer-ring svg { transform: rotate(-90deg); }
-
-  .timer-ring .track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
-  .timer-ring .progress { fill: none; stroke: #6495ED; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-
-  .timer-center {
+  #canvas-bg {
     position: absolute;
     inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
   }
 
-  .timer-display {
-    font-family: 'DM Serif Display', serif;
-    font-size: 42px;
-    color: #fff;
-    letter-spacing: -1px;
-    line-height: 1;
-  }
+  #app > * { position: relative; z-index: 1; }
 
-  .timer-label {
-    font-size: 11px;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 4px;
+  .scene-bar {
+    display: flex; gap: 8px; margin-bottom: 1.5rem;
+    background: rgba(255,255,255,0.06); border-radius: 20px; padding: 4px;
   }
-
-  .mode-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 1.25rem;
+  .scene-btn {
+    background: none; border: none; color: rgba(255,255,255,0.5);
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    padding: 5px 14px; border-radius: 16px; cursor: pointer; transition: all 0.2s;
   }
+  .scene-btn.active { background: rgba(255,255,255,0.15); color: #fff; }
 
+  .timer-ring { position: relative; width: 180px; height: 180px; margin-bottom: 1.5rem; }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring .track { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 6; }
+  .timer-ring .progress { fill: none; stroke: #6495ED; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 1s linear, stroke 0.5s; }
+
+  .timer-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .timer-display { font-family: 'DM Serif Display', serif; font-size: 42px; color: #fff; letter-spacing: -1px; line-height: 1; }
+  .timer-label { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+  .mode-tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; }
   .mode-tab {
-    background: none;
-    border: 1px solid rgba(255,255,255,0.12);
-    color: rgba(255,255,255,0.45);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    padding: 4px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: none; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.45);
+    font-family: 'DM Sans', sans-serif; font-size: 11px; padding: 4px 12px;
+    border-radius: 12px; cursor: pointer; transition: all 0.2s;
   }
+  .mode-tab.active { border-color: #6495ED; color: #6495ED; background: rgba(100,149,237,0.1); }
 
-  .mode-tab.active {
-    border-color: #6495ED;
-    color: #6495ED;
-    background: rgba(100,149,237,0.1);
-  }
-
-  .controls {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 1.75rem;
-  }
-
+  .controls { display: flex; gap: 12px; align-items: center; margin-bottom: 1.75rem; }
   .ctrl-btn {
-    background: rgba(255,255,255,0.08);
-    border: none;
-    color: #fff;
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 14px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
+    background: rgba(255,255,255,0.08); border: none; color: #fff;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+    font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;
   }
-
   .ctrl-btn:hover { background: rgba(255,255,255,0.15); }
-
   .play-btn {
-    background: #6495ED;
-    border: none;
-    color: #fff;
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s, transform 0.1s;
+    background: #6495ED; border: none; color: #fff; width: 52px; height: 52px;
+    border-radius: 50%; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.1s;
   }
-
-  .play-btn:hover { background: #7aabf0; }
+  .play-btn:hover { filter: brightness(1.15); }
   .play-btn:active { transform: scale(0.96); }
 
-  .sounds-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 1.5rem;
-  }
-
+  .sounds-row { display: flex; gap: 8px; margin-bottom: 1.5rem; }
   .sound-chip {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.5);
-    font-size: 11px;
-    font-family: 'DM Sans', sans-serif;
-    padding: 5px 12px;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.5); font-size: 11px; font-family: 'DM Sans', sans-serif;
+    padding: 5px 12px; border-radius: 14px; cursor: pointer; transition: all 0.2s;
   }
-
-  .sound-chip.active {
-    background: rgba(100,149,237,0.18);
-    border-color: #6495ED;
-    color: #9bbdf5;
-  }
+  .sound-chip.active { background: rgba(100,149,237,0.18); border-color: #6495ED; color: #9bbdf5; }
 
   .tasks-panel {
-    width: 100%;
-    max-width: 320px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 12px;
-    padding: 12px 14px;
+    width: 100%; max-width: 320px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 12px 14px;
   }
-
-  .tasks-header {
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .task-input-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
-  }
-
+  .tasks-header { font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px; }
+  .task-input-row { display: flex; gap: 6px; margin-bottom: 10px; }
   .task-input {
-    flex: 1;
-    background: rgba(255,255,255,0.07);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 8px;
-    color: #fff;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 6px 10px;
-    outline: none;
+    flex: 1; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; color: #fff; font-family: 'DM Sans', sans-serif;
+    font-size: 12px; padding: 6px 10px; outline: none;
   }
-
   .task-input::placeholder { color: rgba(255,255,255,0.25); }
-
-  .add-btn {
-    background: #6495ED;
-    border: none;
-    color: #fff;
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 16px;
-    cursor: pointer;
-    line-height: 1;
-  }
-
+  .add-btn { background: #6495ED; border: none; color: #fff; border-radius: 8px; padding: 6px 12px; font-size: 16px; cursor: pointer; }
   .task-list { list-style: none; }
-
-  .task-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    font-size: 12px;
-    color: rgba(255,255,255,0.7);
-  }
-
+  .task-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: rgba(255,255,255,0.7); }
   .task-item:last-child { border-bottom: none; }
-
-  .task-check {
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.25);
-    cursor: pointer;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .task-check.done {
-    background: #6495ED;
-    border-color: #6495ED;
-  }
-
+  .task-check { width: 14px; height: 14px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.25); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+  .task-check.done { background: #6495ED; border-color: #6495ED; }
   .task-text.done { text-decoration: line-through; color: rgba(255,255,255,0.3); }
-
-  .sessions-row {
-    display: flex;
-    gap: 4px;
-    margin-top: 6px;
-    justify-content: center;
-  }
-
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-  }
-
+  .sessions-row { display: flex; gap: 4px; margin-top: 6px; justify-content: center; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.15); }
   .dot.filled { background: #6495ED; }
 </style>
+
 
 <div id="app">
   <div class="scene-bar">
@@ -334,149 +173,203 @@
 </div>
 
 <script>
-  const CIRCUMFERENCE = 502.65;
-  const scenes = {
-    night: { bg: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', accent: '#6495ED' },
-    forest: { bg: 'linear-gradient(135deg, #1a2e1a 0%, #162e16 50%, #0f3020 100%)', accent: '#5DBB8A' },
-    cafe: { bg: 'linear-gradient(135deg, #2e1a0f 0%, #3d2010 50%, #4a2c15 100%)', accent: '#E8A87C' },
-    space: { bg: 'linear-gradient(135deg, #0a0a1a 0%, #0d0d2b 50%, #050510 100%)', accent: '#C77DFF' }
-  };
+const CIRCUMFERENCE = 502.65;
+let totalTime = 25*60, timeLeft = 25*60, running = false, interval = null, sessions = 0;
+let currentScene = 'night';
+let animFrame;
 
-  let totalTime = 25 * 60;
-  let timeLeft = totalTime;
-  let running = false;
-  let interval = null;
-  let sessions = 0;
+const sceneConfig = {
+  night: { bg: '#1a1a2e', accent: '#6495ED', particles: 'stars' },
+  forest: { bg: '#1a2e1a', accent: '#5DBB8A', particles: 'fireflies' },
+  cafe: { bg: '#2e1a0f', accent: '#E8A87C', particles: 'steam' },
+  space: { bg: '#05050f', accent: '#C77DFF', particles: 'nebula' }
+};
 
-  function fmt(s) {
-    return String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
-  }
+const canvas = document.getElementById('canvas-bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
 
-  function updateRing() {
-    const pct = timeLeft / totalTime;
-    document.getElementById('ring').style.strokeDashoffset = CIRCUMFERENCE * (1 - pct);
-  }
+function resizeCanvas() {
+  const app = document.getElementById('app');
+  canvas.width = app.offsetWidth;
+  canvas.height = app.offsetHeight;
+}
 
-  function updateDisplay() {
-    document.getElementById('display').textContent = fmt(timeLeft);
-    updateRing();
-  }
-
-  function toggleTimer() {
-    if (running) {
-      clearInterval(interval);
-      running = false;
-      document.getElementById('playBtn').textContent = '▶';
-    } else {
-      running = true;
-      document.getElementById('playBtn').textContent = '⏸';
-      interval = setInterval(() => {
-        if (timeLeft > 0) {
-          timeLeft--;
-          updateDisplay();
-        } else {
-          clearInterval(interval);
-          running = false;
-          document.getElementById('playBtn').textContent = '▶';
-          sessions = Math.min(sessions + 1, 4);
-          updateDots();
-        }
-      }, 1000);
+function initParticles(scene) {
+  particles = [];
+  const w = canvas.width, h = canvas.height;
+  if (scene === 'night') {
+    for (let i = 0; i < 80; i++) {
+      particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.5+0.3, alpha: Math.random(), speed: Math.random()*0.005+0.002 });
+    }
+  } else if (scene === 'forest') {
+    for (let i = 0; i < 30; i++) {
+      particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*3+2, alpha: 0, vx: (Math.random()-0.5)*0.4, vy: -Math.random()*0.5-0.2, life: Math.random(), maxLife: Math.random()*200+100 });
+    }
+  } else if (scene === 'cafe') {
+    for (let i = 0; i < 12; i++) {
+      particles.push({ x: w*0.3 + Math.random()*w*0.4, y: h*0.6+Math.random()*h*0.3, vy: -Math.random()*0.6-0.3, vx: (Math.random()-0.5)*0.3, alpha: 0, r: Math.random()*8+4, life: 0, maxLife: Math.random()*150+80 });
+    }
+  } else if (scene === 'space') {
+    for (let i = 0; i < 60; i++) {
+      particles.push({ x: Math.random()*w, y: Math.random()*h, r: Math.random()*1.2+0.2, alpha: Math.random()*0.7+0.1, speed: Math.random()*0.003+0.001, hue: Math.random()*60+260 });
     }
   }
+}
 
-  function resetTimer() {
-    clearInterval(interval);
-    running = false;
-    timeLeft = totalTime;
-    document.getElementById('playBtn').textContent = '▶';
-    updateDisplay();
+function drawParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const scene = currentScene;
+  const cfg = sceneConfig[scene];
+
+  if (scene === 'night') {
+    particles.forEach(p => {
+      p.alpha += p.speed * (Math.random() > 0.5 ? 1 : -1);
+      p.alpha = Math.max(0.1, Math.min(1, p.alpha));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+      ctx.fill();
+    });
+    // city glow at bottom
+    const grad = ctx.createLinearGradient(0, canvas.height*0.7, 0, canvas.height);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'rgba(100,149,237,0.12)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, canvas.height*0.7, canvas.width, canvas.height*0.3);
   }
 
-  function skipSession() {
-    clearInterval(interval);
-    running = false;
-    timeLeft = 0;
-    document.getElementById('playBtn').textContent = '▶';
-    updateDisplay();
-    sessions = Math.min(sessions + 1, 4);
-    updateDots();
+  else if (scene === 'forest') {
+    particles.forEach(p => {
+      p.life++;
+      p.x += p.vx; p.y += p.vy;
+      if (p.life < p.maxLife*0.3) p.alpha = p.life/(p.maxLife*0.3)*0.8;
+      else if (p.life > p.maxLife*0.7) p.alpha = (1-(p.life-p.maxLife*0.7)/(p.maxLife*0.3))*0.8;
+      else p.alpha = 0.8;
+      if (p.life > p.maxLife) {
+        p.x = Math.random()*canvas.width; p.y = canvas.height*0.8+Math.random()*canvas.height*0.2;
+        p.life = 0; p.vy = -Math.random()*0.5-0.2; p.vx = (Math.random()-0.5)*0.4;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(93,187,138,${p.alpha})`;
+      ctx.fill();
+    });
+    // ground fog
+    const grad = ctx.createLinearGradient(0, canvas.height*0.75, 0, canvas.height);
+    grad.addColorStop(0, 'transparent');
+    grad.addColorStop(1, 'rgba(30,80,40,0.3)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, canvas.height*0.75, canvas.width, canvas.height*0.25);
   }
 
-  function setMode(name, secs) {
-    document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    totalTime = secs;
-    timeLeft = secs;
-    clearInterval(interval);
-    running = false;
-    document.getElementById('playBtn').textContent = '▶';
-    document.getElementById('mode-label').textContent = name.toUpperCase();
-    updateDisplay();
-  }
-
-  function setScene(name) {
-    document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    const s = scenes[name];
-    document.getElementById('app').style.background = s.bg;
-    document.getElementById('ring').style.stroke = s.accent;
-    document.querySelectorAll('.play-btn, .add-btn').forEach(el => el.style.background = s.accent);
-    document.querySelectorAll('.dot.filled').forEach(el => el.style.background = s.accent);
-    document.querySelectorAll('.sound-chip.active').forEach(el => {
-      el.style.borderColor = s.accent;
-      el.style.color = s.accent;
+  else if (scene === 'cafe') {
+    particles.forEach(p => {
+      p.life++;
+      p.x += p.vx + Math.sin(p.life*0.05)*0.3;
+      p.y += p.vy;
+      if (p.life < p.maxLife*0.2) p.alpha = p.life/(p.maxLife*0.2)*0.25;
+      else if (p.life > p.maxLife*0.6) p.alpha = (1-(p.life-p.maxLife*0.6)/(p.maxLife*0.4))*0.25;
+      else p.alpha = 0.25;
+      if (p.life > p.maxLife) {
+        p.x = canvas.width*0.3+Math.random()*canvas.width*0.4;
+        p.y = canvas.height*0.7+Math.random()*canvas.height*0.2;
+        p.life = 0;
+      }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(232,168,124,${p.alpha})`;
+      ctx.fill();
     });
   }
 
-  function updateDots() {
-    const dots = document.querySelectorAll('#sessionsRow .dot');
-    dots.forEach((d, i) => {
-      d.classList.toggle('filled', i < sessions);
+  else if (scene === 'space') {
+    particles.forEach(p => {
+      p.alpha += p.speed * (Math.random() > 0.5 ? 1 : -1);
+      p.alpha = Math.max(0.05, Math.min(0.9, p.alpha));
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `hsla(${p.hue},80%,80%,${p.alpha})`;
+      ctx.fill();
+    });
+    // nebula blobs
+    [[0.2,0.3,'rgba(199,125,255,0.04)'],[0.7,0.6,'rgba(100,149,237,0.05)'],[0.5,0.8,'rgba(199,125,255,0.03)']].forEach(([x,y,c]) => {
+      const g = ctx.createRadialGradient(x*canvas.width, y*canvas.height, 0, x*canvas.width, y*canvas.height, 120);
+      g.addColorStop(0, c); g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     });
   }
 
-  function toggleSound(el, name) {
-  el.classList.toggle('active');
+  animFrame = requestAnimationFrame(drawParticles);
 }
 
-  const sounds = {
-  rain: new Audio('rain.mp3'),
-  lofi: new Audio('lofi.mp3'),
-  cafe: new Audio('cafe.mp3'),
-  fire: new Audio('fire.mp3')
+function setScene(name, btn) {
+  currentScene = name;
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const cfg = sceneConfig[name];
+  document.getElementById('app').style.background = cfg.bg;
+  document.getElementById('ring').style.stroke = cfg.accent;
+  document.querySelector('.play-btn').style.background = cfg.accent;
+  document.querySelector('.add-btn').style.background = cfg.accent;
+  document.querySelectorAll('.mode-tab.active').forEach(t => { t.style.borderColor = cfg.accent; t.style.color = cfg.accent; });
+  cancelAnimationFrame(animFrame);
+  resizeCanvas();
+  initParticles(name);
+  drawParticles();
 }
 
-Object.values(sounds).forEach(s => s.loop = true)
+function fmt(s) { return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function updateRing() { document.getElementById('ring').style.strokeDashoffset = CIRCUMFERENCE*(1-timeLeft/totalTime); }
+function updateDisplay() { document.getElementById('display').textContent = fmt(timeLeft); updateRing(); }
 
-function toggleSound(el, name) {
-  el.classList.toggle('active')
-  if (el.classList.contains('active')) {
-    sounds[name].play()
-  } else {
-    sounds[name].pause()
-    sounds[name].currentTime = 0
+function toggleTimer() {
+  if (running) { clearInterval(interval); running = false; document.getElementById('playBtn').textContent = '▶'; }
+  else {
+    running = true; document.getElementById('playBtn').textContent = '⏸';
+    interval = setInterval(() => {
+      if (timeLeft > 0) { timeLeft--; updateDisplay(); }
+      else { clearInterval(interval); running = false; document.getElementById('playBtn').textContent = '▶'; sessions = Math.min(sessions+1,4); updateDots(); }
+    }, 1000);
   }
 }
-  
 
-  function addTask() {
-    const inp = document.getElementById('taskInput');
-    const text = inp.value.trim();
-    if (!text) return;
-    const li = document.createElement('li');
-    li.className = 'task-item';
-    li.innerHTML = `<div class="task-check" onclick="toggleTask(this)"></div><span class="task-text">${text}</span>`;
-    document.getElementById('taskList').appendChild(li);
-    inp.value = '';
-  }
+function resetTimer() { clearInterval(interval); running = false; timeLeft = totalTime; document.getElementById('playBtn').textContent = '▶'; updateDisplay(); }
+function skipSession() { clearInterval(interval); running = false; timeLeft = 0; document.getElementById('playBtn').textContent = '▶'; updateDisplay(); sessions = Math.min(sessions+1,4); updateDots(); }
 
-  function toggleTask(el) {
-    el.classList.toggle('done');
-    if (el.classList.contains('done')) el.textContent = '✓';
-    else el.textContent = '';
-    el.nextElementSibling.classList.toggle('done');
-  }
-
+function setMode(label, secs, btn) {
+  document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  totalTime = secs; timeLeft = secs;
+  clearInterval(interval); running = false;
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('mode-label').textContent = label;
   updateDisplay();
+}
+
+function updateDots() {
+  document.querySelectorAll('#sessionsRow .dot').forEach((d,i) => d.classList.toggle('filled', i < sessions));
+}
+
+function toggleSound(el) { el.classList.toggle('active'); }
+
+function addTask() {
+  const inp = document.getElementById('taskInput');
+  const text = inp.value.trim(); if (!text) return;
+  const li = document.createElement('li'); li.className = 'task-item';
+  li.innerHTML = `<div class="task-check" onclick="toggleTask(this)"></div><span class="task-text">${text}</span>`;
+  document.getElementById('taskList').appendChild(li); inp.value = '';
+}
+
+function toggleTask(el) {
+  el.classList.toggle('done');
+  el.textContent = el.classList.contains('done') ? '✓' : '';
+  el.nextElementSibling.classList.toggle('done');
+}
+
+resizeCanvas();
+initParticles('night');
+drawParticles();
+updateDisplay();
 </script>
